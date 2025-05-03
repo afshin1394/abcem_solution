@@ -1,0 +1,9 @@
+pydantic-settings~=2.7.1
+pydantic~=2.10.6
+fastapi~=0.115.8
+starlette~=0.45.3
+aioredis~=2.0.1
+python-jose~=3.4.0
+uvicorn==0.34.0
+debugpy==1.8.12
+httpx~=0.28.1

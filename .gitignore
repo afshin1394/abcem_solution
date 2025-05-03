@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Python egg
+*.egg-info/
+
+# Docker
+*.pid
+*.pid.lock
+
+# Distribution / packaging
+build/
+dist/
+*.egg
+
+# Environment variables
+.env
+*.env
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Test cache
+.pytest_cache/
+
+# Mypy
+.mypy_cache/
+
+# Local settings
+local_settings.py

@@ -1,0 +1,361 @@
+services:
+  core:
+    build:
+      context: ./core
+      dockerfile: Dockerfile
+    env_file:
+      - core/.env.docker
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./core:/app
+    command: >
+      sh -c "
+        ./entrypoint.sh uvicorn app.main:app --host 0.0.0.0 --port 8001
+      "
+    networks:
+      - app_network
+
+  scheduler:
+    build:
+      context: ./scheduler
+      dockerfile: Dockerfile
+    env_file:
+      - scheduler/.env.docker
+    ports:
+      - "8002:8002"
+    depends_on:
+      - airflow-scheduler
+      - airflow-webserver
+      - airflow-init
+      - airflow-postgres
+    volumes:
+      - ./scheduler:/app
+    command: >
+      bash -c "
+                echo 'Waiting for core to initialize...';
+                while ! curl -s http://core:8001/health/check_data_base; do
+                  echo 'Waiting for core to be healthy...';
+                  sleep 5;
+                done;
+                echo 'Core is healthy, starting airflow-webserver...';
+                while ! curl -s http://airflow-webserver:8080; do
+                   echo 'Waiting for airflow to be healthy...';
+                   sleep 5;
+                done;
+                echo 'Core is healthy, starting  scheduler...';
+                uvicorn app.main:app --host 0.0.0.0 --port 8002
+                airflow db upgrade && airflow scheduler
+      "
+    networks:
+       - app_network
+  sms-service:
+    build:
+      context: ./sms_service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+    command: >
+      sh -c "
+        echo 'Waiting for PostgreSQL to be ready...' &&
+        until pg_isready -h postgres -p 5432 -U dev_user; do
+          sleep 2;
+        done;
+        echo 'PostgreSQL is ready. Starting SMS service...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8003
+      "
+    networks:
+      - app_network
+
+  authentication:
+    build:
+      context: ./authentication_service
+      dockerfile: Dockerfile
+    env_file:
+      - authentication_service/.env.docker
+    ports:
+      - "8004:8004"
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./authentication_service:/app
+    command: >
+      sh -c "
+         uvicorn app.main:app --host 0.0.0.0 --port 8004
+      "
+    networks:
+      - app_network
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    ports:
+      - "5050:80"
+    env_file:
+      - core/.env.docker
+    depends_on:
+      - postgres
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - app_network
+
+
+#   #Elasticsearch service
+#  elasticsearch:
+#      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
+#      container_name: elasticsearch
+#      ports:
+#        - "9200:9200"
+#        - "9300:9300"
+#      volumes:
+#        - elasticsearch_data:/usr/share/elasticsearch/data
+#      healthcheck:
+#        test: [ "CMD-SHELL", "curl -s http://localhost:9200 | grep -q 'You Know, for Search'" ]
+#        interval: 30s
+#        retries: 3
+#
+#  # Kibana service for monitoring Elasticsearch data
+#  kibana:
+#      image: docker.elastic.co/kibana/kibana:7.17.3
+#      container_name: kibana
+#      ports:
+#        - "5601:5601"
+#      depends_on:
+#        - elasticsearch
+#      environment:
+#        - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+#  filebeat:
+#    image: docker.elastic.co/beats/filebeat:8.13.4
+#    volumes:
+#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+#      - /var/run/docker.sock:/var/run/docker.sock:ro
+#      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+#    depends_on:
+#      - elasticsearch
+  # Redis service
+  redis:
+    image: redis:7.0  # Use Redis 7.x or later
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+  # postgres service (postgresSql)
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file:
+      - core/.env.docker
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: dev_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dev_user -h postgres -p 5432" ]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app_network
+
+
+
+  logto:
+    depends_on:
+      logto_postgres:
+        condition: service_healthy
+    image: svhd/logto:${TAG-latest}
+    entrypoint: [ "sh", "-c", "npm run cli db seed -- --swe && npm start" ]
+    ports:
+      - "3001:3001"
+      - "3002:3002"
+    environment:
+      - TRUST_PROXY_HEADER=1
+      - DB_URL=postgres://logto:logto@logto_postgres:5432/logto
+      - ADMIN_USER=admin  # Set your admin email
+      - ADMIN_PASSWORD=SuperSecurePassword123  # Set your admin password
+      # Mandatory for GitPod to map host env to the container, thus GitPod can dynamically configure the public URL of Logto;
+      # Or, you can leverage it for local testing.
+      - ENDPOINT
+      - ADMIN_ENDPOINT
+    networks:
+      - app_network
+  logto_postgres:
+    image: postgres:17-alpine
+    user: postgres
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: logto
+      POSTGRES_PASSWORD: logto
+      POSTGRES_DB: logto
+    volumes:
+      - logto_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U logto -h logto_postgres -p 5432" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+  airflow-postgres:
+    image: postgres:17-alpine
+    user: postgres
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U airflow -h airflow_postgres -p 5432" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_network
+
+  airflow-init:
+    image: apache/airflow:2.10.5
+    depends_on:
+      - airflow-postgres
+    environment:
+      AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.basic_auth"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__WEBSERVER__SECRET_KEY: 5Sv-kcDelAFm7YSfQgn7XTs6DvWIcYLLHT_Ip9VgA_s
+
+    volumes:
+      - ./app/infrastructure/airflow/dags:/opt/airflow/dags
+    command: >
+      bash -c "
+        echo 'Initializing the Airflow Database...' &&
+        airflow db migrate &&
+        echo 'Creating admin user...' &&
+        airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin123 &&
+        echo 'Admin user created!' &&
+        exit 0
+      "
+    networks:
+      - app_network
+  airflow-webserver:
+    image: apache/airflow:2.10.5
+    restart: always
+    depends_on:
+      - airflow-postgres
+      - airflow-init  # Ensure webserver waits for database initialization
+      - core
+    environment:
+      AIRFLOW__API__AUTH_BACKEND: airflow.api.auth.backend.basic_auth
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: dCxB1GUQVFb8AzC5MpJYJ0_VBtuyaOOZ9ullj2o0FkA=
+      AIRFLOW__WEBSERVER__SECRET_KEY: 5Sv-kcDelAFm7YSfQgn7XTs6DvWIcYLLHT_Ip9VgA_s
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+
+    volumes:
+      - ./app/infrastructure/airflow/dags:/opt/airflow/dags
+    ports:
+      - "8081:8080"
+    command: >
+      bash -c "exec airflow webserver"
+    networks:
+      - app_network
+  airflow-scheduler:
+    image: apache/airflow:2.10.5
+    restart: always
+    depends_on:
+      - airflow-webserver
+      - airflow-postgres
+      - airflow-init  # Ensure scheduler waits for database initialization
+      - core
+    environment:
+      AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.basic_auth"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow
+      AIRFLOW__CORE__FERNET_KEY: dCxB1GUQVFb8AzC5MpJYJ0_VBtuyaOOZ9ullj2o0FkA=
+      AIRFLOW__WEBSERVER__SECRET_KEY: 5Sv-kcDelAFm7YSfQgn7XTs6DvWIcYLLHT_Ip9VgA_s
+    volumes:
+      - ./scheduler/app/infrastructure/dags:/opt/airflow/dags
+    command: |
+      bash -c "
+        airflow db migrate && 
+        exec airflow scheduler
+      "
+    networks:
+      - app_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"    # Default RabbitMQ message broker port
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+    networks:
+      - app_network
+
+##  elasticsearch:
+##    image: bitnami/elasticsearch
+##    environment:
+##      - discovery.type=single-node
+##      - xpack.security.enabled=false  # Disable auth for local dev
+##    ports:
+##      - "9200:9200"   # Elasticsearch API
+#
+#
+#  kibana:
+#    image: bitnami/kibana:9.0.0
+#    environment:
+#      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+#    ports:
+#      - "5601:5601"   # Kibana UI
+#    depends_on:
+#      - elasticsearch
+
+
+
+volumes:
+  elasticsearch_data:
+  redis_data:
+  pgadmin_data:
+  postgres_data:
+  logto_postgres_data:
+  airflow_postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
