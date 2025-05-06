@@ -4,12 +4,8 @@ from datetime import datetime
 
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
-
 from app.interfaces.api.endpoints import router_all
-
-
 from fastapi import FastAPI
-
 from app.core.config import settings
 from app.infrastructure.consumers.sms_consumer import  RateLimitedConsumer
 from app.infrastructure.rabbit import  get_rabbit
@@ -89,6 +85,8 @@ async def general_exception_handler(request: Request, exc: Exception):
             "errors": [str(exc)]
         },
     )
+
+
 
 app.include_router(router_all)
 app.openapi_schema = custom_openapi(app=app)

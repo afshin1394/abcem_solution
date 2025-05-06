@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     logto_app_id: str
     logto_app_secret: str
     logto_endpoint: str
+    admin_api_resource: str
+    logto_json_path: str
+
 
 
 

@@ -192,15 +192,25 @@ services:
     ports:
       - "3001:3001"
       - "3002:3002"
+
+    volumes:
+      - /Users/mtnirancell/PycharmProjects/abcem_microservice/authentication_service/seed_data.json:/app/seed_data.json
     environment:
-      - TRUST_PROXY_HEADER=1
-      - DB_URL=postgres://logto:logto@logto_postgres:5432/logto
-      - ADMIN_USER=admin  # Set your admin email
-      - ADMIN_PASSWORD=SuperSecurePassword123  # Set your admin password
-      # Mandatory for GitPod to map host env to the container, thus GitPod can dynamically configure the public URL of Logto;
-      # Or, you can leverage it for local testing.
-      - ENDPOINT
-      - ADMIN_ENDPOINT
+        DB_URL: postgres://logto:logto@logto_postgres:5432/logto
+        LOGTO_SEED_FILE: /app/seed_data.json
+        ADMIN_ENDPOINT: http://localhost:3002   # ✅ Important for local access
+
+
+#    environment:
+#      - TRUST_PROXY_HEADER=1
+#      - DB_URL=postgres://logto:logto@logto_postgres:5432/logto
+#      - ADMIN_USER=admin  # Set your admin email
+#      - ADMIN_PASSWORD=SuperSecurePassword123  # Set your admin password
+#      # Mandatory for GitPod to map host env to the container, thus GitPod can dynamically configure the public URL of Logto;
+#      # Or, you can leverage it for local testing.
+#      - ENDPOINT
+#      - ADMIN_ENDPOINT
+#      - LOGTO_SEED_FILE= /app/seed-data.json
     networks:
       - app_network
   logto_postgres:

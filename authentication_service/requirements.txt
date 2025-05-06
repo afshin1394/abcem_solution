@@ -7,3 +7,4 @@ python-jose~=3.4.0
 uvicorn==0.34.0
 debugpy==1.8.12
 httpx~=0.28.1
+pytest~=8.3.5

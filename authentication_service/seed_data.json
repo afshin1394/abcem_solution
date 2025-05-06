@@ -1,0 +1,40 @@
+{
+  "resources": [
+    {
+      "name": "walktest",
+      "scopes": ["read:walktest", "write:walktest"]
+    },
+    {
+      "name": "walktestresults",
+      "scopes": ["read:walktestresults", "write:walktestresults"]
+    }
+  ],
+  "roles": [
+    {
+      "name": "admin",
+      "description": "Administrator with full permissions",
+      "permissions": [
+        "read:walktest",
+        "write:walktest",
+        "read:walktestresults",
+        "write:walktestresults"
+      ]
+    },
+    {
+      "name": "third_party",
+      "description": "Third-party with limited permissions",
+      "permissions": [
+        "write:walktest",
+        "read:walktestresults"
+      ]
+    },
+    {
+      "name": "user",
+      "description": "Regular user",
+      "permissions": [
+        "write:walktestresults",
+        "read:walktest"
+      ]
+    }
+  ]
+}
