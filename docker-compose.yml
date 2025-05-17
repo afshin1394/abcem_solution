@@ -51,7 +51,7 @@ services:
                 airflow db upgrade && airflow scheduler
       "
     networks:
-       - app_network
+      - app_network
   sms-service:
     build:
       context: ./sms_service
@@ -87,13 +87,23 @@ services:
     ports:
       - "8004:8004"
     depends_on:
-      - redis
-      - postgres
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     volumes:
       - ./authentication_service:/app
+      - /Users/mtnirancell/private_key.pem:/app/private_key.pem
+      - /Users/mtnirancell/public_key.pem:/app/public_key.pem
     command: >
       sh -c "
-         uvicorn app.main:app --host 0.0.0.0 --port 8004
+        echo 'Waiting for Logto to be ready...';
+        until curl -v http://logto:3002/console; do
+          echo 'Waiting for Logto admin endpoint...';
+          sleep 5;
+        done;
+        echo 'Logto is ready. Starting authentication service...';
+        uvicorn app.main:app --host 0.0.0.0 --port 8004
       "
     networks:
       - app_network
@@ -115,44 +125,50 @@ services:
       - app_network
 
 
-#   #Elasticsearch service
-#  elasticsearch:
-#      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
-#      container_name: elasticsearch
-#      ports:
-#        - "9200:9200"
-#        - "9300:9300"
-#      volumes:
-#        - elasticsearch_data:/usr/share/elasticsearch/data
-#      healthcheck:
-#        test: [ "CMD-SHELL", "curl -s http://localhost:9200 | grep -q 'You Know, for Search'" ]
-#        interval: 30s
-#        retries: 3
-#
-#  # Kibana service for monitoring Elasticsearch data
-#  kibana:
-#      image: docker.elastic.co/kibana/kibana:7.17.3
-#      container_name: kibana
-#      ports:
-#        - "5601:5601"
-#      depends_on:
-#        - elasticsearch
-#      environment:
-#        - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-#  filebeat:
-#    image: docker.elastic.co/beats/filebeat:8.13.4
-#    volumes:
-#      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-#      - /var/run/docker.sock:/var/run/docker.sock:ro
-#      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
-#    depends_on:
-#      - elasticsearch
+  #   #Elasticsearch service
+  #  elasticsearch:
+  #      image: docker.elastic.co/elasticsearch/elasticsearch:7.17.3
+  #      container_name: elasticsearch
+  #      ports:
+  #        - "9200:9200"
+  #        - "9300:9300"
+  #      volumes:
+  #        - elasticsearch_data:/usr/share/elasticsearch/data
+  #      healthcheck:
+  #        test: [ "CMD-SHELL", "curl -s http://localhost:9200 | grep -q 'You Know, for Search'" ]
+  #        interval: 30s
+  #        retries: 3
+  #
+  #  # Kibana service for monitoring Elasticsearch data
+  #  kibana:
+  #      image: docker.elastic.co/kibana/kibana:7.17.3
+  #      container_name: kibana
+  #      ports:
+  #        - "5601:5601"
+  #      depends_on:
+  #        - elasticsearch
+  #      environment:
+  #        - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+  #  filebeat:
+  #    image: docker.elastic.co/beats/filebeat:8.13.4
+  #    volumes:
+  #      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+  #      - /var/run/docker.sock:/var/run/docker.sock:ro
+  #      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+  #    depends_on:
+  #      - elasticsearch
   # Redis service
   redis:
     image: redis:7.0  # Use Redis 7.x or later
     container_name: redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout: 5s
     volumes:
       - redis_data:/data
     networks:
@@ -188,6 +204,12 @@ services:
       logto_postgres:
         condition: service_healthy
     image: svhd/logto:${TAG-latest}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://logto:3002/console"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s  # Starts health check 10 seconds after the container starts
     entrypoint: [ "sh", "-c", "npm run cli db seed -- --swe && npm start" ]
     ports:
       - "3001:3001"
@@ -196,21 +218,21 @@ services:
     volumes:
       - /Users/mtnirancell/PycharmProjects/abcem_microservice/authentication_service/seed_data.json:/app/seed_data.json
     environment:
-        DB_URL: postgres://logto:logto@logto_postgres:5432/logto
-        LOGTO_SEED_FILE: /app/seed_data.json
-        ADMIN_ENDPOINT: http://localhost:3002   # ✅ Important for local access
+      DB_URL: postgres://logto:logto@logto_postgres:5432/logto
+      LOGTO_SEED_FILE: /app/seed_data.json
+      ADMIN_ENDPOINT: http://localhost:3002   # ✅ Important for local access
 
 
-#    environment:
-#      - TRUST_PROXY_HEADER=1
-#      - DB_URL=postgres://logto:logto@logto_postgres:5432/logto
-#      - ADMIN_USER=admin  # Set your admin email
-#      - ADMIN_PASSWORD=SuperSecurePassword123  # Set your admin password
-#      # Mandatory for GitPod to map host env to the container, thus GitPod can dynamically configure the public URL of Logto;
-#      # Or, you can leverage it for local testing.
-#      - ENDPOINT
-#      - ADMIN_ENDPOINT
-#      - LOGTO_SEED_FILE= /app/seed-data.json
+    #    environment:
+    #      - TRUST_PROXY_HEADER=1
+    #      - DB_URL=postgres://logto:logto@logto_postgres:5432/logto
+    #      - ADMIN_USER=admin  # Set your admin email
+    #      - ADMIN_PASSWORD=SuperSecurePassword123  # Set your admin password
+    #      # Mandatory for GitPod to map host env to the container, thus GitPod can dynamically configure the public URL of Logto;
+    #      # Or, you can leverage it for local testing.
+    #      - ENDPOINT
+    #      - ADMIN_ENDPOINT
+    #      - LOGTO_SEED_FILE= /app/seed-data.json
     networks:
       - app_network
   logto_postgres:
@@ -332,7 +354,7 @@ services:
       - RABBITMQ_DEFAULT_USER=admin
       - RABBITMQ_DEFAULT_PASS=admin
     healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
+      test: [ "CMD", "rabbitmqctl", "status" ]
       interval: 10s
       timeout: 5s
     networks:

@@ -6,13 +6,17 @@ from app.domain.entities.user_domain import UserDomain
 
 class TokenService(ABC):
     @abstractmethod
-    async def generate_tokens(self, session_id: str,otp_code : str) -> TokenDomain:
-        pass
+    async def generate_tokens(self, session_id: str,otp_code : str,**kwargs) -> TokenDomain:
+        raise NotImplementedError()
 
     @abstractmethod
-    async def refresh_access_token(self, refresh_token: str) -> str:
-        pass
+    async def generate_tokens_based_on_refresh_token(self, refresh_token: str) -> TokenDomain:
+        raise NotImplementedError
 
     @abstractmethod
     async def generate_session_id(self, user: UserDomain) -> str:
-        pass
+        raise NotImplementedError
+
+    @abstractmethod
+    async def validate_refresh_token(self, refresh_token: str) -> bool:
+        raise NotImplementedError()

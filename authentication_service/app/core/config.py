@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # JWT Settings
     secret_key: str
     algorithm: str
-    access_token_expire_minutes: int
+    access_token_expiration: int
 
     logto_app_id: str
     logto_app_secret: str
@@ -39,13 +39,19 @@ class Settings(BaseSettings):
     admin_api_resource: str
     logto_json_path: str
 
-
-
+    otp_expiration_time : str
+    session_id_expiration_time : str
 
     # Other Settings
     debug: bool = False
 
 
+    jwt_private_key: str
+    jwt_public_key: str
+    jwt_encrypt_alg:str
+    token_issuer_service : str
+    audience : str
+    blacklisted_tokens_set:str
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"

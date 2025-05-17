@@ -9,7 +9,7 @@ def custom_openapi(app: FastAPI):
 
     openapi_schema = get_openapi(
         title="ABCEM/Authentication",
-        version="1.0.0",
+        version="0.0.1",
         description="ABCEM Authentication API",
         routes=app.routes,
     )

@@ -1,10 +1,12 @@
+from typing import Optional
+
 from app.domain.entities.otp_domain import LoginDomain
-from app.interfaces.dto.response.base_response import BaseResponse, R
+from app.interfaces.dto.response.base_response import BaseResponse
 from pydantic import BaseModel
 
 class LoginResult(BaseModel):
     session_id: str
-    otp:str
+    otp:Optional[str] = None
 
 class LoginResponseDTO(BaseResponse[LoginResult]):
 

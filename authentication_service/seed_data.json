@@ -2,38 +2,77 @@
   "resources": [
     {
       "name": "walktest",
-      "scopes": ["read:walktest", "write:walktest"]
+      "indicator": "string",
+      "scopes": [
+        "read:walktest",
+        "write:walktest"
+      ]
     },
     {
       "name": "walktestresults",
-      "scopes": ["read:walktestresults", "write:walktestresults"]
+      "scopes": [
+        "read:walktestresults",
+        "write:walktestresults"
+      ]
     }
   ],
   "roles": [
     {
       "name": "admin",
-      "description": "Administrator with full permissions",
-      "permissions": [
+      "type": "User",
+      "scopes": [
         "read:walktest",
         "write:walktest",
         "read:walktestresults",
         "write:walktestresults"
-      ]
+      ],
+      "description": "this is the admin user with admin access"
     },
     {
+      "type": "User",
+      "name": "mobile_user",
+      "scopes": [
+        "read:walktest",
+        "write:walktestresults"
+      ],
+      "description": "this is the mobile_user user with mobile_user access"
+    },
+    {
+      "type" : "MachineToMachine",
       "name": "third_party",
-      "description": "Third-party with limited permissions",
-      "permissions": [
+      "scopes": [
         "write:walktest",
         "read:walktestresults"
+      ],
+      "description": "this is the third party module/service with third party access"
+    }
+  ],
+  "users": [
+    {
+      "username": "alirezakhankeshi",
+      "primaryPhone": "09352000453",
+      "email": "alireza.kh@mtnirancell.ir",
+      "password": "AdminPassword123!",
+      "roles": [
+        "admin"
       ]
     },
     {
-      "name": "user",
-      "description": "Regular user",
-      "permissions": [
-        "write:walktestresults",
-        "read:walktest"
+      "username": "afshinsamiei",
+      "primaryPhone": "09352003047",
+      "email": "afshin.sa@mtnirancell.ir",
+      "password": "UserPassword123!",
+      "roles": [
+        "mobile_user"
+      ]
+    },
+    {
+      "username": "marzieh_shirmohammadi",
+      "primaryPhone": "09352005426",
+      "email": "marzieh.sh@mtnirancell.ir",
+      "password": "UserPassword123!",
+      "roles": [
+        "mobile_user"
       ]
     }
   ]
