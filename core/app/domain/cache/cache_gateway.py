@@ -23,3 +23,17 @@ class CacheGateway(ABC):
         Deletes the specified keys from the cache, invalidating them.
         """
         pass
+    @abstractmethod
+    async def sadd(self, key: str,value : Any,expire: int = 2592000):
+        """
+        Set in set data structure
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def sys_member(self,key:str,value: Any):
+        """
+            Lookup the set
+        """
+        raise NotImplementedError()
+

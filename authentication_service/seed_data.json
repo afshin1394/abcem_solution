@@ -2,17 +2,22 @@
   "resources": [
     {
       "name": "walktest",
-      "indicator": "string",
+      "indicator": "http://localhost:8001",
       "scopes": [
+        "create:walktest",
         "read:walktest",
-        "write:walktest"
+        "update:walktest",
+        "delete:walktest"
       ]
     },
-    {
+     {
       "name": "walktestresults",
+      "indicator": "http://localhost:8001",
       "scopes": [
+        "create:walktestresults",
         "read:walktestresults",
-        "write:walktestresults"
+        "update:walktestresults",
+        "delete:walktestresults"
       ]
     }
   ],
@@ -20,31 +25,35 @@
     {
       "name": "admin",
       "type": "User",
+      "description": "This is the admin user with admin access",
       "scopes": [
+        "create:walktest",
         "read:walktest",
-        "write:walktest",
+        "update:walktest",
+        "delete:walktest",
+        "create:walktestresults",
         "read:walktestresults",
-        "write:walktestresults"
-      ],
-      "description": "this is the admin user with admin access"
+        "update:walktestresults",
+        "delete:walktestresults"
+      ]
     },
     {
-      "type": "User",
       "name": "mobile_user",
+      "type": "User",
+      "description": "This is the mobile_user with limited access",
       "scopes": [
         "read:walktest",
-        "write:walktestresults"
-      ],
-      "description": "this is the mobile_user user with mobile_user access"
+        "create:walktestresults"
+      ]
     },
     {
-      "type" : "MachineToMachine",
       "name": "third_party",
+      "type": "MachineToMachine",
+      "description": "This is the third party module/service with limited access",
       "scopes": [
-        "write:walktest",
+        "create:walktest",
         "read:walktestresults"
-      ],
-      "description": "this is the third party module/service with third party access"
+      ]
     }
   ],
   "users": [

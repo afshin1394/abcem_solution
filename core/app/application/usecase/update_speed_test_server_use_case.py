@@ -11,7 +11,7 @@ class UpdateSpeedTestServersUseCase(BaseUseCase):
     def __init__(self, mediator: Mediator):
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs):
+    async def execute(self, **kwargs):
         update_speed_test_server_request = kwargs.get("update_speed_test_server_request")
         print("update_speed_test_server_request" + update_speed_test_server_request.__str__())
         servers = []

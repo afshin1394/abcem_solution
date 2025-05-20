@@ -1,3 +1,5 @@
+from fastapi.security import HTTPAuthorizationCredentials
+
 from app.application.mediator import Mediator
 from app.application.usecase.create_user_usecase import CreateUserUseCase
 from app.application.usecase.create_walk_test_usecase import CreateWalkTestUseCase
@@ -14,16 +16,19 @@ from app.application.usecase.speed_test_server_list_usecase import SpeedTestServ
 from app.application.usecase.update_device_info_usecase import UpdateDeviceInfoUseCase
 from app.application.usecase.update_speed_test_server_use_case import UpdateSpeedTestServersUseCase
 from app.application.usecase.update_walk_test_status_use_case import UpdateWalkTestStatusUseCase
+from app.application.usecase.validate_token_use_case import ValidateAccessTokenUseCase
 from app.application.usecase.validate_walk_test_process_usecase import ValidateWalkTestProcessUseCase
 from app.domain.cache.cache_gateway import CacheGateway
 from app.domain.repositories.speed_test_repository import SpeedTestRepository
 from fastapi import Depends
 
 from app.domain.services.gis_service import GISService
+from app.domain.services.token_service import TokenService
+from app.infrastructure.di.api_key_header import security
 from app.infrastructure.di.mediator import get_mediator
 from app.infrastructure.di.redis_client import get_cache
 from app.infrastructure.di.repositories import get_speed_test_server_repository
-from app.infrastructure.di.services import get_gis_service
+from app.infrastructure.di.services import get_gis_service, get_token_service
 
 
 async def get_speed_test_use_case(
@@ -113,3 +118,12 @@ async def get_validate_walk_test_process_use_case(
         gis_service : GISService = Depends(get_gis_service)
 ) -> ValidateWalkTestProcessUseCase:
     return ValidateWalkTestProcessUseCase(mediator=mediator,gis_service=gis_service)
+
+
+async def get_validate_token_use_case(
+    token_service: TokenService = Depends(get_token_service),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    cache_gateway : CacheGateway = Depends(get_cache),
+):
+    access_token = credentials.credentials  # Gets only the token, not "Bearer "
+    return ValidateAccessTokenUseCase(token_service=token_service, api_key=access_token,cache=cache_gateway)

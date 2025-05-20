@@ -1,4 +1,6 @@
 import datetime
+
+from fastapi.security import APIKeyHeader
 from jose import jwt, JWTError
 from app.application.services.token_service import TokenService
 from app.core.config import settings
@@ -13,9 +15,25 @@ with open(settings.jwt_public_key, "r") as f:
 
 ALGORITHM = settings.jwt_encrypt_alg
 
+
 class TokenServiceImpl(TokenService):
 
+    async def validate_access_token(self,access_token : str ):
+        try:
+            decoded_token = jwt.decode(access_token, PUBLIC_KEY, algorithms=[ALGORITHM])
 
+            if decoded_token["type"] != "access_token":
+                raise ValueError("Invalid token type")
+
+            # Manual expiration check
+            exp = decoded_token.get("exp")
+            if exp and datetime.datetime.utcfromtimestamp(exp) < datetime.datetime.utcnow():
+                return False
+
+            return True  # Token is valid
+
+        except (JWTError, ValueError) as e:
+            return False
 
     async def validate_refresh_token(self, refresh_token: str) -> bool:
         try:
@@ -49,7 +67,7 @@ class TokenServiceImpl(TokenService):
     async def generate_tokens(self, session_id: str, otp_code: str, **kwargs) -> TokenDomain:
         roles = kwargs.get("roles")
         scopes = kwargs.get("scopes", [])
-
+        exp_access_token = datetime.datetime.now() + datetime.timedelta(minutes=15)
         access_token = jwt.encode(
             {
                 "sub": session_id,
@@ -57,12 +75,14 @@ class TokenServiceImpl(TokenService):
                 "roles": roles,
                 "scopes": scopes,
                 "type": "access_token",
-                "exp": datetime.datetime.now() + datetime.timedelta(minutes=15),
+                "exp": exp_access_token,
                 "iss": settings.token_issuer_service,
                 "aud": settings.audience
             },
             PRIVATE_KEY, algorithm=ALGORITHM)
+        access_token_expiration_date = exp_access_token.isoformat()
 
+        exp_refresh_token = datetime.datetime.now() + datetime.timedelta(days=30)
         refresh_token = jwt.encode(
             {
                 "sub": session_id,
@@ -70,17 +90,16 @@ class TokenServiceImpl(TokenService):
                 "roles": roles,
                 "scopes": scopes,
                 "type": "refresh_token",
-                "exp": datetime.datetime.now() + datetime.timedelta(days=30),
+                "exp": exp_refresh_token,
                 "iss": settings.token_issuer_service,
             },
             PRIVATE_KEY, algorithm=ALGORITHM)
-
-        return TokenDomain(access_token=access_token, refresh_token=refresh_token)
+        refresh_token_expiration_date = exp_refresh_token.isoformat()
+        return TokenDomain(access_token=access_token,access_token_expiration_date= access_token_expiration_date, refresh_token=refresh_token,refresh_token_expiration_date= refresh_token_expiration_date)
 
     async def generate_tokens_based_on_refresh_token(self, refresh_token: str) -> TokenDomain:
         decoded = jwt.decode(refresh_token, PUBLIC_KEY, algorithms=[ALGORITHM])
 
-
         access_token = jwt.encode(
             {
                 "sub": decoded["sub"],
@@ -107,6 +126,3 @@ class TokenServiceImpl(TokenService):
             PRIVATE_KEY, algorithm=ALGORITHM)
 
         return TokenDomain(access_token=access_token, refresh_token=refresh_token)
-
-
-

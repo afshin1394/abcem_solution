@@ -17,7 +17,7 @@ class InsertWalkTestResultsUseCase(BaseUseCase):
     def __init__(self, mediator: Mediator):
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> str:
+    async def execute(self, **kwargs) -> str:
         walk_test_results_request = kwargs.get("walk_test_results_request")
         if isinstance(walk_test_results_request, WalkTestResultsRequest):
             print("walk_test_results_request: " + str(walk_test_results_request))

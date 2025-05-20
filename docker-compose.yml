@@ -3,6 +3,7 @@ services:
     build:
       context: ./core
       dockerfile: Dockerfile
+    container_name: core
     env_file:
       - core/.env.docker
     ports:
@@ -12,6 +13,8 @@ services:
       - postgres
     volumes:
       - ./core:/app
+      - /Users/mtnirancell/private_key.pem:/app/private_key.pem
+      - /Users/mtnirancell/public_key.pem:/app/public_key.pem
     command: >
       sh -c "
         ./entrypoint.sh uvicorn app.main:app --host 0.0.0.0 --port 8001
@@ -23,6 +26,7 @@ services:
     build:
       context: ./scheduler
       dockerfile: Dockerfile
+    container_name: scheduler
     env_file:
       - scheduler/.env.docker
     ports:
@@ -56,6 +60,7 @@ services:
     build:
       context: ./sms_service
       dockerfile: Dockerfile
+    container_name: sms-service
     ports:
       - "8003:8003"
     depends_on:
@@ -82,6 +87,7 @@ services:
     build:
       context: ./authentication_service
       dockerfile: Dockerfile
+    container_name: authentication
     env_file:
       - authentication_service/.env.docker
     ports:
@@ -204,6 +210,7 @@ services:
       logto_postgres:
         condition: service_healthy
     image: svhd/logto:${TAG-latest}
+    container_name: logto
     healthcheck:
       test: ["CMD", "curl", "-f", "http://logto:3002/console"]
       interval: 10s
@@ -238,6 +245,7 @@ services:
   logto_postgres:
     image: postgres:17-alpine
     user: postgres
+    container_name: logto_postgres
     ports:
       - "5433:5432"
     environment:
@@ -256,6 +264,7 @@ services:
   airflow-postgres:
     image: postgres:17-alpine
     user: postgres
+    container_name: airflow-postgres
     ports:
       - "5434:5432"
     environment:
@@ -274,6 +283,7 @@ services:
 
   airflow-init:
     image: apache/airflow:2.10.5
+    container_name: airflow-init
     depends_on:
       - airflow-postgres
     environment:
@@ -297,6 +307,7 @@ services:
       - app_network
   airflow-webserver:
     image: apache/airflow:2.10.5
+    container_name: airflow-webserver
     restart: always
     depends_on:
       - airflow-postgres
@@ -321,6 +332,7 @@ services:
       - app_network
   airflow-scheduler:
     image: apache/airflow:2.10.5
+    container_name: airflow-scheduler
     restart: always
     depends_on:
       - airflow-webserver

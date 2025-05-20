@@ -14,3 +14,13 @@ class WalkTestTimeDurationExceeded(DomainException):
 class WalkTestLocationInvalid(DomainException):
     message = "Walk Test Location Invalid"
     status_code = 422
+
+
+class AccessTokenExpiredException(DomainException):
+    message = "Access token expired or invalid"
+    status_code = 401  # Unauthorized (since token expiration affects authentication)
+
+
+class RequestHeaderUnavailable(DomainException):
+    message = "request header unavailable"
+    status_code = 401

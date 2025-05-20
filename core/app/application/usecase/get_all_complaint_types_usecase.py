@@ -12,5 +12,5 @@ class GetAllComplaintTypesUseCase(BaseUseCase):
         def __init__(self,mediator : Mediator):
             self.mediator = mediator
 
-        async def __execute__(self, **kwargs) -> List[ComplaintTypeDomain]:
+        async def execute(self, **kwargs) -> List[ComplaintTypeDomain]:
              return await self.mediator.send(GetAllComplaintTypeQuery())

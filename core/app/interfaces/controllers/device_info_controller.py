@@ -7,6 +7,6 @@ class DeviceInfoController:
     def __init__(self,update_device_info_use_case : UpdateDeviceInfoUseCase):
         self.update_device_info_use_case = update_device_info_use_case
 
-    async def update_device_info(self,update_device_info_request : UpdateDeviceInfoRequest ) -> str:
+    async def update_device_info(self,update_device_info_request : UpdateDeviceInfoRequest ) -> ReceiveDeviceInfoResponse:
       result = await self.update_device_info_use_case(update_device_info_request=update_device_info_request)
       return ReceiveDeviceInfoResponse(status_code = 201,result= result)

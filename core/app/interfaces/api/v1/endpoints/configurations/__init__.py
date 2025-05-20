@@ -1,0 +1,37 @@
+from fastapi import APIRouter
+from app.interfaces.api.v1.endpoints.configurations.service_type import router_public as service_router_public
+from app.interfaces.api.v1.endpoints.configurations.service_type import router_protected as service_router_protected
+from app.interfaces.api.v1.endpoints.configurations.service_type import router_private  as service_router_private
+
+from app.interfaces.api.v1.endpoints.configurations.test_step_type import router_private  as test_step_router_private
+from app.interfaces.api.v1.endpoints.configurations.test_step_type import router_public  as test_step_router_public
+from app.interfaces.api.v1.endpoints.configurations.test_step_type import router_protected  as test_step_router_protected
+
+from app.interfaces.api.v1.endpoints.configurations.technology_type import router_public  as technology_router_public
+from app.interfaces.api.v1.endpoints.configurations.technology_type import router_protected  as technology_router_protected
+from app.interfaces.api.v1.endpoints.configurations.technology_type import router_private  as technology_router_private
+
+from app.interfaces.api.v1.endpoints.configurations.complaint_type import router_public  as complaint_router_public
+from app.interfaces.api.v1.endpoints.configurations.complaint_type import router_protected  as complaint_router_protected
+from app.interfaces.api.v1.endpoints.configurations.complaint_type import router_private  as complaint_router_private
+
+from app.interfaces.api.v1.endpoints.configurations.problematic_service_type import router_public  as problematic_router_public
+from app.interfaces.api.v1.endpoints.configurations.problematic_service_type import router_private  as problematic_router_private
+from app.interfaces.api.v1.endpoints.configurations.problematic_service_type import router_protected  as problematic_router_protected
+
+router_configs = APIRouter(tags=["configs"])
+router_configs.include_router(service_router_public)
+router_configs.include_router(service_router_protected)
+router_configs.include_router(service_router_private)
+router_configs.include_router(test_step_router_private)
+router_configs.include_router(test_step_router_public)
+router_configs.include_router(test_step_router_protected)
+router_configs.include_router(technology_router_public)
+router_configs.include_router(technology_router_protected)
+router_configs.include_router(technology_router_private)
+router_configs.include_router(complaint_router_public)
+router_configs.include_router(complaint_router_protected)
+router_configs.include_router(complaint_router_private)
+router_configs.include_router(problematic_router_public)
+router_configs.include_router(problematic_router_private)
+router_configs.include_router(problematic_router_protected)

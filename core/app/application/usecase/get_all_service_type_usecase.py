@@ -12,5 +12,5 @@ class GetAllServiceTypeUseCase(BaseUseCase):
     def __init__(self,mediator : Mediator):
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> List[ServiceTypeDomain]:
+    async def execute(self, **kwargs) -> List[ServiceTypeDomain]:
         return await self.mediator.send(GetAllServiceTypeQuery())

@@ -11,5 +11,5 @@ class GetAllSpeedTestServersUseCase(BaseUseCase):
         super().__init__()
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> list[SpeedTestServerDomain]:
+    async def execute(self, **kwargs) -> list[SpeedTestServerDomain]:
          return await self.mediator.send(GetAllSpeedTestServersQuery())

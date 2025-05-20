@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
 
+    jwt_private_key: str
+    jwt_public_key: str
+    jwt_encrypt_alg:str
+    blacklisted_tokens_set:str
     # Other Settings
     debug: bool = False
 

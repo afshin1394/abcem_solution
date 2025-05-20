@@ -12,7 +12,7 @@ class UpdateWalkTestStatusUseCase(BaseUseCase):
     def __init__(self,mediator : Mediator):
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> None:
+    async def execute(self, **kwargs) -> None:
         update_walk_test_status_request = kwargs.get("update_walk_test_status_request")
         if isinstance(update_walk_test_status_request, UpdateWalkTestStatusRequest):
             print("update_walk_test_status_request" + update_walk_test_status_request.__str__())

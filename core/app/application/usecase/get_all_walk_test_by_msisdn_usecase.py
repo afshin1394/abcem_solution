@@ -13,7 +13,7 @@ class GetAllWalkTestByMSISDNUseCase(BaseUseCase):
     def __init__(self, mediator: Mediator) -> None:
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> List[WalkTestDomain]:
+    async def execute(self, **kwargs) -> List[WalkTestDomain]:
         get_walk_test_by_msisdn_request = kwargs.get("get_walk_test_by_msisdn_request")
         if isinstance(get_walk_test_by_msisdn_request, GetWalkTestByMSISDNRequest):
             print("get_walk_test_by_msisdn_request" + get_walk_test_by_msisdn_request.__str__())

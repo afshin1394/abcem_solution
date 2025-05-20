@@ -11,7 +11,7 @@ class CreateUserUseCase(BaseUseCase):
     def __init__(self, mediator: Mediator):
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> Any:
+    async def execute(self, **kwargs) -> Any:
         create_user_request = kwargs.get("create_user_request")
         logger.logger.debug(msg=f'create_user {kwargs.keys().__str__()}')
         logger.logger.debug(msg=f'create_user {kwargs.values().__str__()}')

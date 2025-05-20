@@ -12,5 +12,5 @@ class GetAllTestStepTypeUseCase(BaseUseCase):
     def __init__(self,mediator : Mediator):
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> List[StepTestTypeDomain]:
+    async def execute(self, **kwargs) -> List[StepTestTypeDomain]:
        return await self.mediator.send(GetAllTestStepTypeQuery())

@@ -11,13 +11,13 @@ class SpeedTestServerController:
         self.update_speed_test_server_use_case = update_speed_test_server_use_case
         self.get_all_speed_test_servers_use_case = get_all_speed_test_servers_use_case
 
-    async def update_speed_test_servers(self,update_speed_test_server_request: UpdateSpeedTestServersRequest) -> None:
+    async def update_speed_test_servers(self,update_speed_test_server_request: UpdateSpeedTestServersRequest) -> SpeedTestsServersResponse:
 
          await self.update_speed_test_server_use_case(update_speed_test_server_request = update_speed_test_server_request)
          return SpeedTestsServersResponse(status_code = 204,result= None)
 
 
-    async def get_all_speed_test_servers(self) -> None:
+    async def get_all_speed_test_servers(self) -> SpeedTestsServersResponse:
         servers_domain_list = await self.get_all_speed_test_servers_use_case()
         print(f"servers_domain_list -------------->>>>>>>>>>>>>>>>> {servers_domain_list}")
         servers_response_list = await map_models_list(servers_domain_list,SpeedTestServer)

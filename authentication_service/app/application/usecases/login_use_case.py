@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 import pyotp
 
@@ -8,9 +9,14 @@ from app.application.usecases.base_use_case import BaseUseCase
 from app.core.config import settings
 from app.domain.cache.cache_gateway import CacheGateway
 from app.domain.entities.otp_domain import LoginDomain
+from app.infrastructure.exceptions import RedisSetException, FailedSendingSMSException
 
 
 class LoginUseCase(BaseUseCase):
+
+
+
+
     def __init__(self, cache_gateway: CacheGateway, sms_service: SMSService, token_service: TokenService):
         self.cache_gateway = cache_gateway
         self.sms_service = sms_service
@@ -26,13 +32,22 @@ class LoginUseCase(BaseUseCase):
         otp_code = totp.now()
 
         # Store the secret tied to the phone number/session (with TTL)
-        print("int(settings.otp_expiration_time)",int(settings.otp_expiration_time))
-        print("int(settings.session_id_expiration_time)",int(settings.session_id_expiration_time))
-        await self.cache_gateway.set(f"otp:otp_code:{session_id}", otp_code, int(settings.otp_expiration_time))
-        await self.cache_gateway.set(f"msisdn:msisdn:{session_id}", msisdn, int(settings.session_id_expiration_time))
+        print("int(settings.otp_expiration_time)", int(settings.otp_expiration_time))
+        print("int(settings.session_id_expiration_time)", int(settings.session_id_expiration_time))
+        try:
+            await self.cache_gateway.set(f"otp:otp_code:{session_id}", otp_code, int(settings.otp_expiration_time))
+        except:
+            raise RedisSetException(f"otp:otp_code:{session_id}")
+        try:
+            await self.cache_gateway.set(f"msisdn:msisdn:{session_id}", msisdn,
+                                         int(settings.session_id_expiration_time))
+        except:
+            raise RedisSetException(f"msisdn:msisdn:{session_id}")
 
-        # Send the OTP via SMS
-        await self.sms_service.send_sms(msisdn, otp_code)
-
+        try:
+            # Send the OTP via SMS
+            await self.sms_service.send_sms(msisdn, otp_code)
+        except:
+            raise FailedSendingSMSException()
         # Return session ID (do not return OTP in production)
-        return LoginDomain(session_id=session_id,otp= otp_code)
+        return LoginDomain(session_id=session_id, otp=otp_code)

@@ -20,3 +20,6 @@ class TokenService(ABC):
     @abstractmethod
     async def validate_refresh_token(self, refresh_token: str) -> bool:
         raise NotImplementedError()
+    @abstractmethod
+    async def validate_access_token(self, access_token: str) -> bool:
+        raise NotImplementedError()

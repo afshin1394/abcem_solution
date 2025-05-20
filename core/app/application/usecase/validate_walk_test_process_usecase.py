@@ -16,7 +16,7 @@ class ValidateWalkTestProcessUseCase(BaseUseCase):
         self.mediator = mediator
         self.gis_service = gis_service
 
-    async def __execute__(self, **kwargs) -> bool:
+    async def execute(self, **kwargs) -> bool:
         request = kwargs.get("validate_walk_test_process_request")
         if isinstance(request, ValidateWalkTestProcessRequest):
 

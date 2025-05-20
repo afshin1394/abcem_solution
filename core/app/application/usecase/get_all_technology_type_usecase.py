@@ -10,5 +10,5 @@ class GetAllTechnologyTypesUseCase(BaseUseCase):
     def __init__(self, mediator: Mediator) -> None:
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> List[TechnologyTypeDomain]:
+    async def execute(self, **kwargs) -> List[TechnologyTypeDomain]:
         return await self.mediator.send(GetAllTechnologyTypesQuery())

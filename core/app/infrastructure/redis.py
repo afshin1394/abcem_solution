@@ -41,3 +41,18 @@ class RedisCacheGateway(CacheGateway):
                 await self.redis.set(key, serialized, ex=expire)
             else:
                 await self.redis.set(key, serialized)
+
+
+
+    async def sadd(self, key: str,value : Any,expire: int = 2592000):
+           serialized = json.dumps(value)
+           if expire > 0:
+               await self.redis.sadd(key, serialized)
+               await self.redis.expire(key, expire)
+           else:
+               await self.redis.sadd(key, serialized)
+
+
+    async def sys_member(self,key:str,value: Any):
+           serialized = json.dumps(value)
+           return await self.redis.sismember(key, serialized)

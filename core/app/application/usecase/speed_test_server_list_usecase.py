@@ -11,9 +11,9 @@ class SpeedTestServerListUseCase(BaseUseCase):
     def __init__(self, repository: SpeedTestRepository):
         self.repository = repository
 
-    async def __execute__(self, **kwargs) -> List[SpeedTestServerDomain]:
+    async def execute(self, **kwargs) -> List[SpeedTestServerDomain]:
 
-        await self.repository.upsert_servers(servers=servers)
+        await self.repository.upsert_servers(servers=[])
 
-        return servers
+        return []
         # Update the database

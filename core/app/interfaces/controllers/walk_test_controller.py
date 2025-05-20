@@ -12,29 +12,21 @@ from app.interfaces.dto.request.get_walk_test_by_msisdn_request import GetWalkTe
 from app.interfaces.dto.request.update_walk_test_status_request import UpdateWalkTestStatusRequest
 from app.interfaces.dto.request.validate_walk_test_process_request import ValidateWalkTestProcessRequest
 from app.interfaces.dto.request.walk_test_request import WalkTestRequest
-from app.interfaces.dto.request.walk_test_results_by_walk_test_id_request import WalkTestResultsByWalkTestIdRequest
-from app.interfaces.dto.request.walk_test_results_request import WalkTestResultsRequest
 from app.interfaces.dto.response.update_walk_test_status_response import UpdateWalkTestStatusResponse
 from app.interfaces.dto.response.validate_walk_test_process_response import ValidateWalkTestProcessResponse
 from app.interfaces.dto.response.walk_test_by_msisdn_response import WalkTestByMSISDNResponse, WalkTestByMSISDN
 from app.interfaces.dto.response.walk_test_created_response import WalkTestCreatedResponse
-from app.interfaces.dto.response.walk_test_results_by_walk_test_id_response import WalkTestResultsByWalkTestIdResponse
-from app.interfaces.dto.response.walk_test_results_response import WalkTestResultsResponse
 
 
 class WalkTestController:
     def __init__(self, create_walk_test_use_case: CreateWalkTestUseCase,
                  get_all_walk_test_by_msisdn_use_case: GetAllWalkTestByMSISDNUseCase,
-                 insert_walk_test_results_use_case : InsertWalkTestResultsUseCase,
-                 get_walk_test_results_by_walk_test_id_use_case: GetWalkTestResultsByWalkTestIdUseCase,
                  update_walk_test_status_use_case: UpdateWalkTestStatusUseCase,
                  validate_walk_test_process_use_case : ValidateWalkTestProcessUseCase,
                  ):
 
         self.create_walk_test_use_case = create_walk_test_use_case
         self.get_all_walk_test_by_msisdn_use_case = get_all_walk_test_by_msisdn_use_case
-        self.insert_walk_test_results_use_case = insert_walk_test_results_use_case
-        self.get_walk_test_results_by_walk_test_id_use_case = get_walk_test_results_by_walk_test_id_use_case
         self.update_walk_test_status_use_case = update_walk_test_status_use_case
         self.validate_walk_test_process_use_case = validate_walk_test_process_use_case
 
@@ -58,14 +50,7 @@ class WalkTestController:
         return WalkTestByMSISDNResponse(result=response_list)
 
 
-    async def receive_walk_test_results(self,walk_test_results_request : WalkTestResultsRequest) -> WalkTestResultsResponse:
-        result = await self.insert_walk_test_results_use_case(walk_test_results_request=walk_test_results_request)
-        return WalkTestResultsResponse(status_code = 201,result = result)
 
-    async def get_walk_test_results_by_walk_test_id(self,walk_test_results_by_walk_test_id_request : WalkTestResultsByWalkTestIdRequest) -> WalkTestResultsByWalkTestIdResponse:
-        walk_test_results_with_device_info_composition = await self.get_walk_test_results_by_walk_test_id_use_case(walk_test_results_by_walk_test_id_request=walk_test_results_by_walk_test_id_request)
-        print("walk_test_by_walk_test_id_domain_list" + walk_test_results_with_device_info_composition.__str__())
-        return WalkTestResultsByWalkTestIdResponse(result = walk_test_results_with_device_info_composition)
 
     async def update_walk_test_status(self,update_walk_test_status_request : UpdateWalkTestStatusRequest) -> UpdateWalkTestStatusResponse:
         await self.update_walk_test_status_use_case(update_walk_test_status_request=update_walk_test_status_request)

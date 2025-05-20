@@ -17,7 +17,7 @@ class GetWalkTestResultsByWalkTestIdUseCase(BaseUseCase):
     def __init__(self,mediator : Mediator) -> None:
         self.mediator = mediator
 
-    async def __execute__(self, **kwargs) -> WalkTestResultsWithDeviceInfoComposition:
+    async def execute(self, **kwargs) -> WalkTestResultsWithDeviceInfoComposition:
         walk_test_results_by_walk_test_id_request = kwargs.get("walk_test_results_by_walk_test_id_request")
         print("walk_test_results_by_walk_test_id_request"+walk_test_results_by_walk_test_id_request.__str__())
         if isinstance(walk_test_results_by_walk_test_id_request, WalkTestResultsByWalkTestIdRequest):

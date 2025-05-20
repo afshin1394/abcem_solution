@@ -12,7 +12,7 @@ class CreateWalkTestUseCase(BaseUseCase):
         self.mediator = mediator
         self.cache_gateway = cache_gateway
 
-    async def __execute__(self, **kwargs) -> str:
+    async def execute(self, **kwargs) -> str:
         create_walk_test_request = kwargs.get("create_walk_test_request")
         if isinstance(create_walk_test_request, WalkTestRequest):
             print("walk_test_request" + create_walk_test_request.__str__())

@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     token_issuer_service : str
     audience : str
     blacklisted_tokens_set:str
+    kavehnegar_template: str
+
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:{self.redis_port}/{self.redis_db}"
