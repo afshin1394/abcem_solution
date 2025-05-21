@@ -36,8 +36,6 @@ services:
       - airflow-webserver
       - airflow-init
       - airflow-postgres
-    volumes:
-      - ./scheduler:/app
     command: >
       bash -c "
                 echo 'Waiting for core to initialize...';
@@ -293,7 +291,7 @@ services:
       AIRFLOW__WEBSERVER__SECRET_KEY: 5Sv-kcDelAFm7YSfQgn7XTs6DvWIcYLLHT_Ip9VgA_s
 
     volumes:
-      - ./app/infrastructure/airflow/dags:/opt/airflow/dags
+      - ./scheduler/app/infrastructure/airflow/dags:/opt/airflow/dags
     command: >
       bash -c "
         echo 'Initializing the Airflow Database...' &&
@@ -323,7 +321,7 @@ services:
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
 
     volumes:
-      - ./app/infrastructure/airflow/dags:/opt/airflow/dags
+      - ./scheduler/app/infrastructure/airflow/dags:/opt/airflow/dags
     ports:
       - "8081:8080"
     command: >

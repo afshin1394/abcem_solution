@@ -74,39 +74,57 @@ async def seed_logto_resources_and_roles(file_path: str):
 
         for resource in resources:
             existing_resource = next((r for r in all_resources if r["name"] == resource["name"]), None)
+
             if existing_resource:
                 print(f"ℹ️ Resource '{resource['name']}' already exists.")
+                resource_id = existing_resource["id"]
                 resource_map[resource["name"]] = existing_resource
-                continue
 
-            res_body = {
-                "tenantId": resource["tenantId"],
-                "name": resource["name"],
-                "indicator": resource["indicator"],
-                "accessTokenTtl": resource["accessTokenTtl"]
-            }
-
-            res = await client.post(f"{logto_endpoint}/api/resources", headers=headers, json=res_body)
-            res.raise_for_status()
-            print(f"✅ Created resource '{resource['name']}'")
-
-            resource_data = res.json()
-            resource_id = resource_data["id"]
-            resource_map[resource["name"]] = resource_data
-
-            for scope in resource["scopes"]:
-                scope_body = {
-                    "name": scope["name"],
-                    "description": scope["description"]
+                # Fetch existing scopes for this resource
+                existing_scopes_res = await client.get(
+                    f"{logto_endpoint}/api/resources/{resource_id}/scopes",
+                    headers=headers
+                )
+                existing_scopes_res.raise_for_status()
+                existing_scopes = existing_scopes_res.json()
+                existing_scope_names = {s["name"]: s for s in existing_scopes}
+            else:
+                # Create the resource
+                res_body = {
+                    "tenantId": resource["tenantId"],
+                    "name": resource["name"],
+                    "indicator": resource["indicator"],
+                    "accessTokenTtl": resource["accessTokenTtl"]
                 }
 
-                scope_res = await client.post(
-                    f"{logto_endpoint}/api/resources/{resource_id}/scopes",
-                    headers=headers,
-                    json=scope_body
-                )
-                scope_res.raise_for_status()
-                scope_data = scope_res.json()
+                res = await client.post(f"{logto_endpoint}/api/resources", headers=headers, json=res_body)
+                res.raise_for_status()
+                print(f"✅ Created resource '{resource['name']}'")
+
+                resource_data = res.json()
+                resource_id = resource_data["id"]
+                resource_map[resource["name"]] = resource_data
+                existing_scope_names = {}
+
+            # Create missing scopes and populate scope_lookup
+            for scope in resource["scopes"]:
+                if scope["name"] in existing_scope_names:
+                    scope_data = existing_scope_names[scope["name"]]
+                    print(f"ℹ️ Scope '{scope['name']}' already exists in resource '{resource['name']}'")
+                else:
+                    scope_body = {
+                        "name": scope["name"],
+                        "description": scope["description"]
+                    }
+                    scope_res = await client.post(
+                        f"{logto_endpoint}/api/resources/{resource_id}/scopes",
+                        headers=headers,
+                        json=scope_body
+                    )
+                    scope_res.raise_for_status()
+                    scope_data = scope_res.json()
+                    print(f"✅ Created scope '{scope['name']}' in resource '{resource['name']}'")
+
                 scope_lookup[scope_data["name"]] = scope_data["id"]
 
         # Step 2: Create roles and attach scopes
@@ -115,41 +133,53 @@ async def seed_logto_resources_and_roles(file_path: str):
         role_check.raise_for_status()
         all_roles = role_check.json()
 
+
+
+        print("roles", roles, flush=True)
+
         for role in roles:
+            # Check if the role already exists
             existing_role = next((r for r in all_roles if r["name"] == role["name"]), None)
+
             if existing_role:
                 print(f"ℹ️ Role '{role['name']}' already exists.")
-                role_id_map[role["name"]] = existing_role["id"]
-                continue
+                role_id = existing_role["id"]
+            else:
+                # Create the role
+                role_body = {
+                    "tenantId": role["tenantId"],
+                    "name": role["name"],
+                    "description": role["description"],
+                    "type": role["type"],
+                    "isDefault": role["isDefault"],
+                    "scopes": role["scopes"]
+                }
+                role_res = await client.post(f"{logto_endpoint}/api/roles", headers=headers, json=role_body)
+                role_res.raise_for_status()
+                role_data = role_res.json()
+                role_id = role_data["id"]
+                print(f"✅ Created role '{role['name']}'")
 
-            role_body = {
-                "tenantId": role["tenantId"],
-                "name": role["name"],
-                "description": role["description"],
-                "type": role["type"],
-                "isDefault": role["isDefault"],
-                "scopes": role["scopes"]
-            }
+            # Map role name to its ID
+            role_id_map[role["name"]] = role_id
 
-            role_res = await client.post(f"{logto_endpoint}/api/roles", headers=headers, json=role_body)
-            role_res.raise_for_status()
-            role_data = role_res.json()
-            role_id_map[role["name"]] = role_data["id"]
-            print(f"scope lookup {scope_lookup} ")
+            # Always attempt to attach scopes, regardless of whether the role existed
+            print(f"🔍 scope lookup: {scope_lookup}")
             scope_ids = [
                 scope_lookup[scope_name]
                 for scope_name in role["scopes"]
                 if scope_name in scope_lookup
             ]
-            print(f"scope_ids {scope_ids}")
+            print(f"🔗 scope_ids: {scope_ids}")
+
             if scope_ids:
                 attach_res = await client.post(
-                    f"{logto_endpoint}/api/roles/{role_data['id']}/scopes",
+                    f"{logto_endpoint}/api/roles/{role_id}/scopes",
                     headers=headers,
                     json={"scopeIds": scope_ids}
                 )
                 attach_res.raise_for_status()
-                print(f"assign scopes to roles {attach_res.status_code}")
+                print(f"✅ Attached scopes to role '{role['name']}'")
 
         # Step 3: Create users and assign roles
         user_name_to_id = {}

@@ -1,23 +1,33 @@
 {
   "resources": [
     {
-      "name": "walktest",
+      "name": "walk_test",
       "indicator": "http://localhost:8001",
       "scopes": [
-        "create:walktest",
-        "read:walktest",
-        "update:walktest",
-        "delete:walktest"
+        "create:walk_test",
+        "read:walk_test",
+        "update:walk_test",
+        "delete:walk_test"
       ]
     },
-     {
-      "name": "walktestresults",
+    {
+      "name": "walk_test_results",
       "indicator": "http://localhost:8001",
       "scopes": [
-        "create:walktestresults",
-        "read:walktestresults",
-        "update:walktestresults",
-        "delete:walktestresults"
+        "create:walk_test_results",
+        "read:walk_test_results",
+        "update:walk_test_results",
+        "delete:walk_test_results"
+      ]
+    },
+    {
+      "name": "configs",
+      "indicator": "http://localhost:8001",
+      "scopes": [
+        "create:config",
+        "read:config",
+        "update:config",
+        "delete:config"
       ]
     }
   ],
@@ -27,14 +37,18 @@
       "type": "User",
       "description": "This is the admin user with admin access",
       "scopes": [
-        "create:walktest",
-        "read:walktest",
-        "update:walktest",
-        "delete:walktest",
-        "create:walktestresults",
-        "read:walktestresults",
-        "update:walktestresults",
-        "delete:walktestresults"
+        "create:walk_test",
+        "read:walk_test",
+        "update:walk_test",
+        "delete:walk_test",
+        "create:walk_test_results",
+        "read:walk_test_results",
+        "update:walk_test_results",
+        "delete:walk_test_results",
+        "create:config",
+        "read:config",
+        "update:config",
+        "delete:config"
       ]
     },
     {
@@ -42,8 +56,9 @@
       "type": "User",
       "description": "This is the mobile_user with limited access",
       "scopes": [
-        "read:walktest",
-        "create:walktestresults"
+        "read:walk_test",
+        "create:walk_test_results",
+        "read:config"
       ]
     },
     {
@@ -51,8 +66,9 @@
       "type": "MachineToMachine",
       "description": "This is the third party module/service with limited access",
       "scopes": [
-        "create:walktest",
-        "read:walktestresults"
+        "create:walk_test",
+        "read:walk_test_results",
+        "read:config"
       ]
     }
   ],
