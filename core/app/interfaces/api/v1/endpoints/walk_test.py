@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends
 
-
+from app.infrastructure.di.api_key_header import get_validate_token
 from app.infrastructure.di.controllers import get_walk_test_controller
 from app.infrastructure.di.usecases import get_validate_token_use_case
 from app.interfaces.controllers.walk_test_controller import WalkTestController
@@ -19,7 +19,7 @@ from app.interfaces.dto.response.walk_test_created_response import WalkTestCreat
 router_walk_test = APIRouter()
 
 router_public = APIRouter(prefix="/public/walk_test",tags=["walk_test"])
-router_protected = APIRouter(prefix="/protected/walk_test",tags=["walk_test"],dependencies=[Depends(get_validate_token_use_case)])
+router_protected = APIRouter(prefix="/protected/walk_test",tags=["walk_test"],dependencies=[Depends(get_validate_token)])
 router_private = APIRouter(prefix="/private/walk_test",tags=["walk_test"])
 
 @router_protected.post("/create", response_model=WalkTestCreatedResponse)

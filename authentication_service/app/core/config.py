@@ -1,3 +1,4 @@
+from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -49,10 +50,18 @@ class Settings(BaseSettings):
     jwt_private_key: str
     jwt_public_key: str
     jwt_encrypt_alg:str
+    jwt_issuer : str
+
     token_issuer_service : str
     audience : str
+    expecting_aud : str
     blacklisted_tokens_set:str
-    kavehnegar_template: str
+
+
+    @property
+    def audience_list(self) -> List[str]:
+        return self.audience.split(",") if self.audience else []
+
 
     @property
     def redis_url(self) -> str:

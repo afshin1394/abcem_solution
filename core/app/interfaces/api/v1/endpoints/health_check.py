@@ -3,12 +3,12 @@ from fastapi.params import Depends
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.infrastructure.di.api_key_header import get_validate_token
 from app.infrastructure.di.database import get_db
-from app.infrastructure.di.usecases import get_validate_token_use_case
 router_health_check = APIRouter()
 
 router_public = APIRouter(prefix="/public/health",tags=["health"])
-router_protected = APIRouter(prefix="/protected/health",tags=["health"],dependencies=[Depends(get_validate_token_use_case)])
+router_protected = APIRouter(prefix="/protected/health",tags=["health"],dependencies=[Depends(get_validate_token)])
 router_private = APIRouter(prefix="/private/health",tags=["health"])
 
 @router_private.get("/check_data_base", response_model=None)

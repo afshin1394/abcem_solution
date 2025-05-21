@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, Depends
 
+from app.infrastructure.di.api_key_header import get_validate_token
 from app.infrastructure.di.controllers import get_speed_test_servers_controller
 from app.infrastructure.di.usecases import get_validate_token_use_case
 from app.interfaces.controllers.speed_test_controller import SpeedTestServerController
@@ -12,7 +13,7 @@ router_speed_test = APIRouter()
 
 
 router_public = APIRouter(prefix="/public/speed_test",tags=["speed_test"])
-router_protected = APIRouter(prefix="/protected/speed_test",tags=["speed_test"],dependencies=[Depends(get_validate_token_use_case)])
+router_protected = APIRouter(prefix="/protected/speed_test",tags=["speed_test"],dependencies=[Depends(get_validate_token)])
 router_private = APIRouter(prefix="/private/speed_test",tags=["speed_test"])
 
 @router_private.post("/update_servers", response_model = BaseSuccessResponse)

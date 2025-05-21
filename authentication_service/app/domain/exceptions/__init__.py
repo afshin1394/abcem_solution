@@ -28,9 +28,14 @@ class RefreshTokenExpiredException(DomainException):
     status_code = 401  # Unauthorized (since token expiration affects authentication)
 
 class AccessTokenExpiredException(DomainException):
-    message = "Access token expired or invalid"
+    message = "Access token is expired"
     status_code = 401  # Unauthorized (since token expiration affects authentication)
-
+class AccessTokenInvalidException(DomainException):
+    message = "Access token is invalid"
+    status_code = 401  # Unauthorized (since token expiration affects authentication)
+class AccessTokenTypeInvalidException(DomainException):
+    message = "Access token type is invalid"
+    status_code = 401  # Unauthorized (since token expiration affects authentication)
 class FailAddingToBlacklistException(DomainException):
     message = "failed adding to blacklist"
     status_code = 500  # Internal Server Error (since it's a system failure)

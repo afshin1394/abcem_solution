@@ -1,3 +1,5 @@
+from fastapi.security import api_key
+
 from app.application.usecase.base_use_case import BaseUseCase
 from app.core.config import settings
 from app.domain.cache.cache_gateway import CacheGateway
@@ -13,8 +15,10 @@ class ValidateAccessTokenUseCase(BaseUseCase):
 
     async def execute(self) -> str:
         # Validate API Key
+        print("api_key",api_key)
         if not self.api_key.startswith("Bearer "):
             raise RequestHeaderUnavailable()
+        print("api_key",api_key)
 
         # Extract token from header
         access_token = self.api_key.split("Bearer ")[1]

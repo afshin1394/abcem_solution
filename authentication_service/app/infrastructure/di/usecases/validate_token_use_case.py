@@ -9,7 +9,7 @@ from app.infrastructure.di.redis_client import get_cache
 from app.infrastructure.di.services.token_service import get_token_service
 
 
-async def get_validate_token_use_case(
+def get_validate_token_use_case(
     token_service: TokenService = Depends(get_token_service),
     credentials: HTTPAuthorizationCredentials = Depends(security),
     cache_gateway : CacheGateway = Depends(get_cache),

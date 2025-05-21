@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     jwt_public_key: str
     jwt_encrypt_alg:str
     blacklisted_tokens_set:str
+    expecting_aud : str
+    jwt_issuer : str
     # Other Settings
     debug: bool = False
 

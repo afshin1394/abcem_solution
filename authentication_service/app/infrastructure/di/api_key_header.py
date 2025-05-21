@@ -1,10 +1,35 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+from app.application.services.token_service import TokenService
+from app.core.config import settings
+from app.domain.cache.cache_gateway import CacheGateway
+from app.domain.exceptions import  RequestHeaderUnavailable, AccessTokenInvalidException
+from app.infrastructure.di.redis_client import get_cache
+from app.infrastructure.di.services.token_service import get_token_service
+
 security = HTTPBearer()
 
-def get_bearer_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    token = credentials.credentials
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing Bearer token")
 
-    return token  # Extracted Bearer token
+
+
+async def get_validate_token(credentials: HTTPAuthorizationCredentials = Depends(security),token_service : TokenService = Depends(get_token_service),cache : CacheGateway = Depends(get_cache)):
+    # Validate API Key
+    token = credentials.credentials
+
+    print("validate access token",token)
+    if not token:
+        raise RequestHeaderUnavailable()
+
+    # Extract token from header
+    if await cache.sys_member(settings.blacklisted_tokens_set, token):
+        raise AccessTokenInvalidException()
+
+    # Validate token
+    await token_service.validate_access_token(token)
+
+
+
+
+
+

@@ -1,11 +1,14 @@
 import datetime
 
-from fastapi.security import APIKeyHeader
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
+from jose.exceptions import JWTClaimsError
+
 from app.application.services.token_service import TokenService
 from app.core.config import settings
 from app.domain.entities.user_domain import UserDomain
 from app.domain.entities.token_domain import TokenDomain
+from app.domain.exceptions import AccessTokenTypeInvalidException, AccessTokenExpiredException, \
+    AccessTokenInvalidException
 
 # Load RSA Private & Public Keys
 with open(settings.jwt_private_key, "r") as f:
@@ -18,22 +21,44 @@ ALGORITHM = settings.jwt_encrypt_alg
 
 class TokenServiceImpl(TokenService):
 
-    async def validate_access_token(self,access_token : str ):
+    async def validate_access_token(self, access_token: str) -> dict:
         try:
-            decoded_token = jwt.decode(access_token, PUBLIC_KEY, algorithms=[ALGORITHM])
+            decoded_token = jwt.decode(
+                access_token,
+                PUBLIC_KEY,
+                algorithms=[ALGORITHM],
+                audience=settings.expected_aud,
+                issuer=settings.jwt_issuer,
+            )
 
+            # Validate required claims
+            required_claims = ["sub", "exp", "type"]
+            for claim in required_claims:
+                if claim not in decoded_token:
+                    raise AccessTokenInvalidException(f"Missing claim: {claim}")
+
+            # Check token type
             if decoded_token["type"] != "access_token":
-                raise ValueError("Invalid token type")
+                raise AccessTokenTypeInvalidException()
 
-            # Manual expiration check
-            exp = decoded_token.get("exp")
-            if exp and datetime.datetime.utcfromtimestamp(exp) < datetime.datetime.utcnow():
-                return False
+            # Optional: Check `nbf` if included
+            nbf = decoded_token.get("nbf")
+            if nbf and datetime.datetime.utcnow().timestamp() < nbf:
+                raise AccessTokenInvalidException("Token not yet valid (nbf)")
 
-            return True  # Token is valid
+            return decoded_token  # Return the claims if valid
 
-        except (JWTError, ValueError) as e:
-            return False
+        except ExpiredSignatureError:
+            raise AccessTokenExpiredException()
+
+        except JWTClaimsError as e:
+            raise AccessTokenInvalidException(f"Invalid claims: {str(e)}")
+
+        except JWTError as e:
+            raise AccessTokenInvalidException(f"JWT error: {str(e)}")
+
+        except Exception as e:
+            raise AccessTokenInvalidException(f"Unknown error: {str(e)}")
 
     async def validate_refresh_token(self, refresh_token: str) -> bool:
         try:
@@ -77,7 +102,7 @@ class TokenServiceImpl(TokenService):
                 "type": "access_token",
                 "exp": exp_access_token,
                 "iss": settings.token_issuer_service,
-                "aud": settings.audience
+                "aud": settings.audience_list
             },
             PRIVATE_KEY, algorithm=ALGORITHM)
         access_token_expiration_date = exp_access_token.isoformat()
@@ -109,7 +134,7 @@ class TokenServiceImpl(TokenService):
                 "type": "access_token",
                 "exp": datetime.datetime.now() + datetime.timedelta(minutes=15),
                 "iss": settings.token_issuer_service,
-                "aud": settings.audience
+                "aud": settings.audience_list
             },
             PRIVATE_KEY, algorithm=ALGORITHM)
 

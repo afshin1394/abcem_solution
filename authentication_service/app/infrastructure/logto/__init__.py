@@ -1,10 +1,8 @@
-
 import httpx
 from app.core.config import settings
 from app.infrastructure.logto.services import fetch_access_token
 from app.infrastructure.logto.utils import load_json_part
 from app.infrastructure.logto.services import create_users
-
 
 logto_endpoint = settings.logto_endpoint
 token_endpoint = settings.logto_token_endpoint
@@ -14,11 +12,9 @@ admin_api_resource = settings.admin_api_resource or "default"
 logto_json_path = settings.logto_json_path
 
 
-
-
-
-
 async def seed_logto_resources_and_roles(file_path: str):
+
+
     raw_resources = load_json_part(file_path, "resources")
     raw_roles = load_json_part(file_path, "roles")
     raw_users = load_json_part(file_path, "users")
@@ -50,7 +46,7 @@ async def seed_logto_resources_and_roles(file_path: str):
         {
             "username": user["username"],
             "email": user["email"],
-            "primaryPhone" : user["primaryPhone"],
+            "primaryPhone": user["primaryPhone"],
             "password": user["password"],
             "roles": user["roles"]
         }
@@ -76,7 +72,7 @@ async def seed_logto_resources_and_roles(file_path: str):
             existing_resource = next((r for r in all_resources if r["name"] == resource["name"]), None)
 
             if existing_resource:
-                print(f"ℹ️ Resource '{resource['name']}' already exists.")
+                print(f"ℹ️Resource '{resource['name']}' already exists.")
                 resource_id = existing_resource["id"]
                 resource_map[resource["name"]] = existing_resource
 
@@ -85,6 +81,7 @@ async def seed_logto_resources_and_roles(file_path: str):
                     f"{logto_endpoint}/api/resources/{resource_id}/scopes",
                     headers=headers
                 )
+
                 existing_scopes_res.raise_for_status()
                 existing_scopes = existing_scopes_res.json()
                 existing_scope_names = {s["name"]: s for s in existing_scopes}
@@ -133,8 +130,6 @@ async def seed_logto_resources_and_roles(file_path: str):
         role_check.raise_for_status()
         all_roles = role_check.json()
 
-
-
         print("roles", roles, flush=True)
 
         for role in roles:
@@ -163,23 +158,34 @@ async def seed_logto_resources_and_roles(file_path: str):
             # Map role name to its ID
             role_id_map[role["name"]] = role_id
 
-            # Always attempt to attach scopes, regardless of whether the role existed
-            print(f"🔍 scope lookup: {scope_lookup}")
-            scope_ids = [
+            # Get existing scopes for the role
+            existing_role_scopes_resp = await client.get(
+                f"{logto_endpoint}/api/roles/{role_id}/scopes",
+                headers=headers
+            )
+            existing_role_scopes_resp.raise_for_status()
+            existing_scope_ids = {scope["id"] for scope in existing_role_scopes_resp.json()}
+
+            # Prepare scope IDs to attach
+            requested_scope_ids = {
                 scope_lookup[scope_name]
                 for scope_name in role["scopes"]
                 if scope_name in scope_lookup
-            ]
-            print(f"🔗 scope_ids: {scope_ids}")
+            }
 
-            if scope_ids:
+            # Only attach scopes that are not already present
+            new_scope_ids = list(requested_scope_ids - existing_scope_ids)
+
+            if new_scope_ids:
                 attach_res = await client.post(
                     f"{logto_endpoint}/api/roles/{role_id}/scopes",
                     headers=headers,
-                    json={"scopeIds": scope_ids}
+                    json={"scopeIds": new_scope_ids}
                 )
                 attach_res.raise_for_status()
-                print(f"✅ Attached scopes to role '{role['name']}'")
+                print(f"✅ Attached new scopes to role '{role['name']}'")
+            else:
+                print(f"ℹ️ All requested scopes already exist for role '{role['name']}', skipping.")
 
         # Step 3: Create users and assign roles
         user_name_to_id = {}
@@ -204,7 +210,7 @@ async def seed_logto_resources_and_roles(file_path: str):
                 user_resp = await client.post(
                     f"{logto_endpoint}/api/users",
                     headers=headers,
-                    json={"username": username, "email": email, "password": password ,"primaryPhone": phone_number}
+                    json={"username": username, "email": email, "password": password, "primaryPhone": phone_number}
                 )
                 user_resp.raise_for_status()
                 user_id = user_resp.json()["id"]
@@ -231,7 +237,6 @@ async def seed_logto_resources_and_roles(file_path: str):
                     print(f"ℹ️ User '{username}' already has role '{role_name}', skipping.")
                     continue
 
-
                 print(f"userID {user_id}")
                 print(f"roleID {role_id}")
                 assign_resp = await client.post(
@@ -239,9 +244,9 @@ async def seed_logto_resources_and_roles(file_path: str):
                     headers=headers,
                     json={"userIds": [user_id]}
                 )
-                print(f"role {role_name} assignment for user '{username}' .",flush=True)
-                print(f"assign_resp {assign_resp.status_code}",flush=True)
-                print(f"assign_resp {assign_resp.json()}",flush=True)
+                print(f"role {role_name} assignment for user '{username}' .", flush=True)
+                print(f"assign_resp {assign_resp.status_code}", flush=True)
+                print(f"assign_resp {assign_resp.json()}", flush=True)
                 assign_resp.raise_for_status()
                 print(f"✅ Assigned role '{role_name}' to '{username}'")
 

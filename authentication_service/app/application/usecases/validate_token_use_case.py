@@ -13,16 +13,20 @@ class ValidateAccessTokenUseCase(BaseUseCase):
 
     async def execute(self) -> str:
         # Validate API Key
+        print("validate access token")
         if not self.api_key.startswith("Bearer "):
             raise RequestHeaderUnavailable()
 
         # Extract token from header
         access_token = self.api_key.split("Bearer ")[1]
+        print("validate access token",access_token)
 
         if await self.cache.sys_member(settings.blacklisted_tokens_set, access_token):
             raise AccessTokenExpiredException()
         # Validate token
-        if not self.token_service.validate_access_token(access_token):
+        print("access token ds dsdds", self.token_service.validate_access_token(access_token))
+
+        if not await self.token_service.validate_access_token(access_token):
             raise AccessTokenExpiredException()
 
         return access_token  # ✅ Return token if valid

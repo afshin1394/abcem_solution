@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 
+from app.infrastructure.di.api_key_header import get_validate_token
 from app.infrastructure.di.controllers import get_all_service_type_controller
 from app.infrastructure.di.usecases import get_validate_token_use_case
 from app.interfaces.controllers.service_type_controller import ServiceTypeController
@@ -7,7 +8,7 @@ from app.interfaces.dto.response.service_type_response import ServiceTypeRespons
 
 
 router_public = APIRouter(prefix="/public/config/service_type")
-router_protected = APIRouter(prefix="/protected/config/service_type",dependencies=[Depends(get_validate_token_use_case)])
+router_protected = APIRouter(prefix="/protected/config/service_type",dependencies=[Depends(get_validate_token)])
 router_private = APIRouter(prefix="/private/config/service_type")
 
 @router_protected.get("/get_all", response_model = ServiceTypeResponse)

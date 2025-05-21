@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends
+from fastapi.security import HTTPAuthorizationCredentials
 
-from app.infrastructure.di.api_key_header import get_bearer_token
+from app.infrastructure.di.api_key_header import get_validate_token, security
 from app.infrastructure.di.controllers.auth_controller import get_auth_controller
 from app.infrastructure.di.usecases.validate_token_use_case import get_validate_token_use_case
 from app.interfaces.controller.auth_controller import AuthController
@@ -13,7 +14,7 @@ from app.interfaces.dto.response.refresh_token_response import RefreshTokenRespo
 from app.interfaces.dto.response.verify_response import VerifyResponse
 
 router_public = APIRouter(prefix="/auth/public",tags=["authentication"])
-router_protected = APIRouter(prefix="/auth/protected",tags=["authentication"],dependencies=[Depends(get_validate_token_use_case)])
+router_protected = APIRouter(prefix="/auth/protected",tags=["authentication"],dependencies=[Depends(get_validate_token)])
 router_private = APIRouter(prefix="/auth/private",tags=["authentication"])
 
 
@@ -37,8 +38,11 @@ async def refresh_access_token(refresh_token_request: RefreshTokenRequest,
 
 
 @router_protected.post("/logout")
-async def logout(logout_request: LogoutRequest,auth_controller: AuthController = Depends(get_auth_controller),access_token: str = Depends(get_bearer_token)):
-    print("access_token",access_token)
-    return await auth_controller.logout(logout_request=logout_request,access_token= access_token)
+async def logout(logout_request: LogoutRequest,auth_controller: AuthController = Depends(get_auth_controller),
+credentials: HTTPAuthorizationCredentials = Depends(security),
+):
+    token = credentials.credentials
+    print("token",token)
+    return await auth_controller.logout(logout_request=logout_request,access_token=token)
 
 
