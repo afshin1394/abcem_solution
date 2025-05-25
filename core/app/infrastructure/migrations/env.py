@@ -7,6 +7,7 @@ from alembic import context
 
 from app.infrastructure.postgres_async import engine
 # Import your models and base class
+
 from app.infrastructure.schemas.base_db_model import Base
 from app.infrastructure.schemas.table_step_type import TableStepTestType
 from app.infrastructure.schemas.table_call_test import TableCallTest
@@ -43,7 +44,7 @@ def include_object(object, name, type_, reflected, compare_to):
         object_schema = getattr(object, 'schema', None)
         if object_schema is None:
             return True
-        return object_schema == "sms_service"
+        return object_schema == "sms"
     return True
 
 def run_migrations_offline() -> None:

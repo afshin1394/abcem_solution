@@ -10,7 +10,7 @@ services:
       - "8001:8001"
     depends_on:
       - redis
-      - postgres
+      - postgres_core
     volumes:
       - ./core:/app
       - /Users/mtnirancell/private_key.pem:/app/private_key.pem
@@ -24,11 +24,11 @@ services:
 
   scheduler:
     build:
-      context: ./scheduler
+      context: speed_test
       dockerfile: Dockerfile
-    container_name: scheduler
+    container_name: speed_test
     env_file:
-      - scheduler/.env.docker
+      - speed_test/.env.docker
     ports:
       - "8002:8002"
     depends_on:
@@ -46,7 +46,7 @@ services:
                 echo 'Core is healthy, starting airflow-webserver...';
                 while ! curl -s http://airflow-webserver:8080; do
                    echo 'Waiting for airflow to be healthy...';
-                   sleep 5;
+                   sleep 5; 
                 done;
                 echo 'Core is healthy, starting  scheduler...';
                 uvicorn app.main:app --host 0.0.0.0 --port 8002
@@ -54,15 +54,16 @@ services:
       "
     networks:
       - app_network
-  sms-service:
+
+  sms:
     build:
-      context: ./sms_service
+      context: sms
       dockerfile: Dockerfile
-    container_name: sms-service
+    container_name: sms
     ports:
       - "8003:8003"
     depends_on:
-      postgres:
+      postgres_sms:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -72,7 +73,7 @@ services:
     command: >
       sh -c "
         echo 'Waiting for PostgreSQL to be ready...' &&
-        until pg_isready -h postgres -p 5432 -U dev_user; do
+        until pg_isready -h postgres_sms -p 5432 -U dev_user; do
           sleep 2;
         done;
         echo 'PostgreSQL is ready. Starting SMS service...' &&
@@ -81,22 +82,43 @@ services:
     networks:
       - app_network
 
+
+  postgres_sms:
+    image: postgres:14
+    container_name: postgres_sms
+    restart: always
+    ports:
+      - "5436:5432"
+    env_file:
+      - sms/.env.docker
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: sms_db
+    volumes:
+      - postgres_sms_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dev_user -d sms_db" ]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app_network
+
   authentication:
     build:
-      context: ./authentication_service
+      context: authentication
       dockerfile: Dockerfile
     container_name: authentication
     env_file:
-      - authentication_service/.env.docker
+      - authentication/.env.docker
     ports:
       - "8004:8004"
     depends_on:
       redis:
         condition: service_healthy
-      postgres:
-        condition: service_healthy
     volumes:
-      - ./authentication_service:/app
+      - ./authentication:/app
       - /Users/mtnirancell/private_key.pem:/app/private_key.pem
       - /Users/mtnirancell/public_key.pem:/app/public_key.pem
     command: >
@@ -122,7 +144,11 @@ services:
     env_file:
       - core/.env.docker
     depends_on:
-      - postgres
+      - postgres_core
+      - postgres_sms
+      - postgres_speed_test
+      - airflow-postgres
+      - logto_postgres
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     networks:
@@ -179,9 +205,9 @@ services:
       - app_network
 
   # postgres service (postgresSql)
-  postgres:
+  postgres_core:
     image: postgres:14
-    container_name: postgres
+    container_name: postgres_core
     restart: always
     ports:
       - "5432:5432"
@@ -190,18 +216,38 @@ services:
     environment:
       POSTGRES_USER: dev_user
       POSTGRES_PASSWORD: dev_password
-      POSTGRES_DB: dev_db
+      POSTGRES_DB: core_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_core_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U dev_user -h postgres -p 5432" ]
+      test: [ "CMD-SHELL", "pg_isready -U dev_user -d core_db" ]
       interval: 10s
       retries: 5
       start_period: 10s
     networks:
       - app_network
 
-
+  postgres_speed_test:
+    image: postgres:14
+    container_name: postgres_speed_test
+    restart: always
+    ports:
+      - "5435:5432"
+    env_file:
+      - speed_test/.env.docker
+    environment:
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: speed_test_db
+    volumes:
+      - postgres_speed_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U dev_user -d speed_test_db" ]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - app_network
 
   logto:
     depends_on:
@@ -221,7 +267,7 @@ services:
       - "3002:3002"
 
     volumes:
-      - /Users/mtnirancell/PycharmProjects/abcem_microservice/authentication_service/seed_data.json:/app/seed_data.json
+      - /Users/mtnirancell/PycharmProjects/abcem_microservice/authentication/seed_data.json:/app/seed_data.json
     environment:
       DB_URL: postgres://logto:logto@logto_postgres:5432/logto
       LOGTO_SEED_FILE: /app/seed_data.json
@@ -251,7 +297,7 @@ services:
       POSTGRES_PASSWORD: logto
       POSTGRES_DB: logto
     volumes:
-      - logto_postgres_data:/var/lib/postgresql/data
+      - postgres_logto_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U logto -h logto_postgres -p 5432" ]
       interval: 10s
@@ -270,7 +316,7 @@ services:
       POSTGRES_PASSWORD: airflow
       POSTGRES_DB: airflow
     volumes:
-      - airflow_postgres_data:/var/lib/postgresql/data
+      - postgres_airflow_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U airflow -h airflow_postgres -p 5432" ]
       interval: 10s
@@ -291,7 +337,7 @@ services:
       AIRFLOW__WEBSERVER__SECRET_KEY: 5Sv-kcDelAFm7YSfQgn7XTs6DvWIcYLLHT_Ip9VgA_s
 
     volumes:
-      - ./scheduler/app/infrastructure/airflow/dags:/opt/airflow/dags
+      - ./speed_test/app/infrastructure/airflow/dags:/opt/airflow/dags
     command: >
       bash -c "
         echo 'Initializing the Airflow Database...' &&
@@ -321,7 +367,7 @@ services:
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
 
     volumes:
-      - ./scheduler/app/infrastructure/airflow/dags:/opt/airflow/dags
+      - ./speed_test/app/infrastructure/airflow/dags:/opt/airflow/dags
     ports:
       - "8081:8080"
     command: >
@@ -330,12 +376,12 @@ services:
       - app_network
   airflow-scheduler:
     image: apache/airflow:2.10.5
-    container_name: airflow-scheduler
+    container_name: airflow-speed_test
     restart: always
     depends_on:
       - airflow-webserver
       - airflow-postgres
-      - airflow-init  # Ensure scheduler waits for database initialization
+      - airflow-init  # Ensure speed_test waits for database initialization
       - core
     environment:
       AIRFLOW__API__AUTH_BACKEND: "airflow.api.auth.backend.basic_auth"
@@ -344,7 +390,7 @@ services:
       AIRFLOW__CORE__FERNET_KEY: dCxB1GUQVFb8AzC5MpJYJ0_VBtuyaOOZ9ullj2o0FkA=
       AIRFLOW__WEBSERVER__SECRET_KEY: 5Sv-kcDelAFm7YSfQgn7XTs6DvWIcYLLHT_Ip9VgA_s
     volumes:
-      - ./scheduler/app/infrastructure/dags:/opt/airflow/dags
+      - ./speed_test/app/infrastructure/dags:/opt/airflow/dags
     command: |
       bash -c "
         airflow db migrate && 
@@ -394,9 +440,11 @@ volumes:
   elasticsearch_data:
   redis_data:
   pgadmin_data:
-  postgres_data:
-  logto_postgres_data:
-  airflow_postgres_data:
+  postgres_core_data:
+  postgres_speed_test_data:
+  postgres_logto_data:
+  postgres_airflow_data:
+  postgres_sms_data:
 
 networks:
   app_network:

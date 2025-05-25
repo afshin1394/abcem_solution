@@ -452,7 +452,7 @@ def run_python_code_linux(pid, python_code, connect_debugger_tracing=False, show
     else:
         print('PYDEVD_GDB_SCAN_SHARED_LIBRARIES not set (scanning all libraries for needed symbols).')
 
-    cmd.extend(["--eval-command='set scheduler-locking off'"])  # If on we'll deadlock.
+    cmd.extend(["--eval-command='set speed_test-locking off'"])  # If on we'll deadlock.
 
     # Leave auto by default (it should do the right thing as we're attaching to a process in the
     # current host).

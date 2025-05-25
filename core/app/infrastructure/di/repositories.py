@@ -32,8 +32,7 @@ from app.infrastructure.repository_impl.users_repository_impl import UsersReposi
 from app.infrastructure.repository_impl.write.multi.write_walk_test_result_unit_of_work_impl import \
     WriteWalkTestResultsUnitOfWorkImpl
 from app.infrastructure.repository_impl.write.single.write_device_info_repository_impl import  WriteDeviceInfoRepositoryImpl
-from app.infrastructure.repository_impl.write.single.write_speed_test_server_repository_impl import \
-    WriteSpeedTestServerRepositoryImpl
+from app.infrastructure.repository_impl.write.single.write_speed_test_server_repository_impl import  WriteSpeedTestServerRepositoryImpl
 from app.infrastructure.repository_impl.write.single.write_walk_test_repository_impl import WriteWalkTestRepositoryImpl
 
 
